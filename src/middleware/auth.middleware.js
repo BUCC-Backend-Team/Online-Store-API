@@ -33,7 +33,6 @@ const protect = catchAsync(async (req, res, next) => {
     });
     throw error;
   }
-<<<<<<< HEAD
 
   const token = authHeader.split(' ')[1];
   const payload = verifyToken(token); // throws ApiError(401) if invalid/expired
@@ -45,8 +44,6 @@ const protect = catchAsync(async (req, res, next) => {
 
   req.user = user;
   next();
-=======
->>>>>>> ea4b7ba4a1afff068cb24b53b66165b35abefd16
 });
 
 module.exports = { protect };
