@@ -21,4 +21,6 @@ const getOrder = Joi.object({
   id: Joi.string().uuid().required(),
 });
 
-module.exports = { placeOrder, getOrder };
+const cancelOrder = getOrder;
+
+module.exports = { placeOrder, getOrder, cancelOrder };

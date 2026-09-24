@@ -187,6 +187,88 @@ const getOrder = async ({ orderId, userId, role }) => {
   return serializeOrder(order);
 };
 
+const CANCELLABLE_STATUSES = new Set(['pending', 'paid']);
+
+const cancelOrderTransaction = async ({ orderId, userId, role }) => {
+  return prisma.$transaction(async (tx) => {
+    const lockedOrders = await tx.$queryRaw`
+      SELECT order_id, user_id, status
+      FROM orders
+      WHERE order_id = CAST(${orderId} AS uuid)
+      FOR UPDATE
+    `;
+
+    if (lockedOrders.length === 0) {
+      throw new ApiError(404, 'Order not found');
+    }
+
+    const orderRow = lockedOrders[0];
+    if (role === 'customer' && String(orderRow.user_id).toLowerCase() !== userId.toLowerCase()) {
+      throw new ApiError(403, 'You can only cancel your own orders');
+    }
+
+    if (!CANCELLABLE_STATUSES.has(orderRow.status)) {
+      const message =
+        orderRow.status === 'cancelled'
+          ? 'Order is already cancelled'
+          : 'Shipped orders cannot be cancelled';
+      throw new ApiError(409, message);
+    }
+
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    });
+
+    if (!order) {
+      throw new ApiError(404, 'Order not found');
+    }
+
+    const sortedItems = [...order.items].sort((a, b) => a.productId.localeCompare(b.productId));
+    const lockedProducts = await lockProducts(tx, sortedItems);
+
+    for (const item of sortedItems) {
+      if (!lockedProducts.has(item.productId.toLowerCase())) {
+        throw new ApiError(409, 'A product on this order no longer exists');
+      }
+
+      const restored = await tx.product.updateMany({
+        where: { id: item.productId },
+        data: { stockQuantity: { increment: item.quantity } },
+      });
+
+      if (restored.count !== 1) {
+        throw new ApiError(409, 'Could not restore stock for this order');
+      }
+    }
+
+    const cancelled = await tx.order.update({
+      where: { id: orderId },
+      data: { status: 'cancelled' },
+      include: { items: true },
+    });
+
+    return serializeOrder(cancelled);
+  });
+};
+
+const cancelOrder = async ({ orderId, userId, role }) => {
+  if (role !== 'customer' && role !== 'admin') {
+    throw new ApiError(403, 'Only customers and admins can cancel an order');
+  }
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    try {
+      return await cancelOrderTransaction({ orderId, userId, role });
+    } catch (error) {
+      const retryable = error.code === 'P2034' && attempt < MAX_ATTEMPTS;
+      if (!retryable) {
+        throw error;
+      }
+    }
+  }
+};
+
 const getAllOrders = async ({ role }) => {
   if (role !== 'admin') {
     throw new ApiError(403, 'Only admins can view all orders');
@@ -224,4 +306,4 @@ const placeOrder = async ({ userId, role, items }) => {
   }
 };
 
-module.exports = { placeOrder, getMyOrders, getAllOrders, getOrder };
+module.exports = { placeOrder, getMyOrders, getAllOrders, getOrder, cancelOrder };

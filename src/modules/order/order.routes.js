@@ -9,5 +9,6 @@ const router = express.Router();
 router.post('/', protect, validate(orderValidation.placeOrder), orderController.placeOrder);
 router.get('/', protect, orderController.getOrders);
 router.get('/:id', protect, validate(orderValidation.getOrder, 'params'), orderController.getOrder);
+router.post('/:id/cancel', protect, validate(orderValidation.cancelOrder, 'params'), orderController.cancelOrder);
 
 module.exports = router;
