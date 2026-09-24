@@ -10,5 +10,12 @@ router.post('/', protect, validate(orderValidation.placeOrder), orderController.
 router.get('/', protect, orderController.getOrders);
 router.get('/:id', protect, validate(orderValidation.getOrder, 'params'), orderController.getOrder);
 router.post('/:id/cancel', protect, validate(orderValidation.cancelOrder, 'params'), orderController.cancelOrder);
+router.patch(
+  '/:id/status',
+  protect,
+  validate(orderValidation.getOrder, 'params'),
+  validate(orderValidation.updateStatus),
+  orderController.updateStatus
+);
 
 module.exports = router;

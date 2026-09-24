@@ -74,4 +74,22 @@ const cancelOrder = async (req, res, next) => {
   }
 };
 
-module.exports = { placeOrder, getOrders, getOrder, cancelOrder };
+const updateStatus = async (req, res, next) => {
+  try {
+    const order = await orderService.updateOrderStatus({
+      orderId: req.params.id,
+      status: req.body.status,
+      role: req.user.role,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Order status updated successfully',
+      data: { order },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { placeOrder, getOrders, getOrder, cancelOrder, updateStatus };

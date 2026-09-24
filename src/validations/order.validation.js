@@ -23,4 +23,8 @@ const getOrder = Joi.object({
 
 const cancelOrder = getOrder;
 
-module.exports = { placeOrder, getOrder, cancelOrder };
+const updateStatus = Joi.object({
+  status: Joi.string().valid('paid', 'shipped').required(),
+});
+
+module.exports = { placeOrder, getOrder, cancelOrder, updateStatus };

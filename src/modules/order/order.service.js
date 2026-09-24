@@ -269,6 +269,43 @@ const cancelOrder = async ({ orderId, userId, role }) => {
   }
 };
 
+const REQUIRED_CURRENT_STATUS = {
+  paid: 'pending',
+  shipped: 'paid',
+};
+
+const updateOrderStatus = async ({ orderId, status, role }) => {
+  if (role !== 'admin') {
+    throw new ApiError(403, 'Only admins can update order status');
+  }
+
+  const updated = await prisma.order.updateMany({
+    where: {
+      id: orderId,
+      status: REQUIRED_CURRENT_STATUS[status],
+    },
+    data: { status },
+  });
+
+  if (updated.count === 1) {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    });
+    if (!order) {
+      throw new ApiError(404, 'Order not found');
+    }
+    return serializeOrder(order);
+  }
+
+  const existing = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!existing) {
+    throw new ApiError(404, 'Order not found');
+  }
+
+  throw new ApiError(409, `Order cannot move from ${existing.status} to ${status}`);
+};
+
 const getAllOrders = async ({ role }) => {
   if (role !== 'admin') {
     throw new ApiError(403, 'Only admins can view all orders');
@@ -306,4 +343,4 @@ const placeOrder = async ({ userId, role, items }) => {
   }
 };
 
-module.exports = { placeOrder, getMyOrders, getAllOrders, getOrder, cancelOrder };
+module.exports = { placeOrder, getMyOrders, getAllOrders, getOrder, cancelOrder, updateOrderStatus };
