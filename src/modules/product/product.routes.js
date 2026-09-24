@@ -7,5 +7,6 @@ const productValidation = require('../../validations/product.validation');
 const router = express.Router();
 
 router.post('/', protect, validate(productValidation.createProduct), productController.createProduct);
+router.get('/', protect, validate(productValidation.listProducts, 'query'), productController.getProducts);
 
 module.exports = router;

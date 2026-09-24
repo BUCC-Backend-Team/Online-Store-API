@@ -22,4 +22,22 @@ const createProduct = async (req, res, next) => {
   }
 };
 
-module.exports = { createProduct };
+const getProducts = async (req, res, next) => {
+  try {
+    const result = await productService.getProducts({
+      role: req.user.role,
+      page: Number(req.query.page) || 1,
+      limit: Number(req.query.limit) || 20,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Products retrieved successfully',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { createProduct, getProducts };

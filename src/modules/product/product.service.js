@@ -63,4 +63,28 @@ const createProduct = async ({ role, sku, name, description, price, stockQuantit
   }
 };
 
-module.exports = { createProduct };
+const getProducts = async ({ role, page = 1, limit = 20 }) => {
+  if (role !== 'customer' && role !== 'admin') {
+    throw new ApiError(403, 'Only customers and admins can view products');
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.product.count(),
+  ]);
+
+  return {
+    products: products.map(serializeProduct),
+    page,
+    limit,
+    total,
+  };
+};
+
+module.exports = { createProduct, getProducts };
