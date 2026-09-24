@@ -17,4 +17,8 @@ const placeOrder = Joi.object({
     }),
 });
 
-module.exports = { placeOrder };
+const getOrder = Joi.object({
+  id: Joi.string().uuid().required(),
+});
+
+module.exports = { placeOrder, getOrder };

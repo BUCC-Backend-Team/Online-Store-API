@@ -38,4 +38,22 @@ const getOrders = async (req, res, next) => {
   }
 };
 
-module.exports = { placeOrder, getOrders };
+const getOrder = async (req, res, next) => {
+  try {
+    const order = await orderService.getOrder({
+      orderId: req.params.id,
+      userId: req.user.id,
+      role: req.user.role,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Order retrieved successfully',
+      data: { order },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { placeOrder, getOrders, getOrder };

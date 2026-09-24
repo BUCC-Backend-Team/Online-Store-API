@@ -166,6 +166,27 @@ const getMyOrders = async ({ userId, role }) => {
   return orders.map(serializeOrder);
 };
 
+const getOrder = async ({ orderId, userId, role }) => {
+  if (role !== 'customer' && role !== 'admin') {
+    throw new ApiError(403, 'Only customers and admins can view an order');
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: true },
+  });
+
+  if (!order) {
+    throw new ApiError(404, 'Order not found');
+  }
+
+  if (role === 'customer' && order.userId.toLowerCase() !== userId.toLowerCase()) {
+    throw new ApiError(403, 'You can only view your own orders');
+  }
+
+  return serializeOrder(order);
+};
+
 const getAllOrders = async ({ role }) => {
   if (role !== 'admin') {
     throw new ApiError(403, 'Only admins can view all orders');
@@ -203,4 +224,4 @@ const placeOrder = async ({ userId, role, items }) => {
   }
 };
 
-module.exports = { placeOrder, getMyOrders, getAllOrders };
+module.exports = { placeOrder, getMyOrders, getAllOrders, getOrder };
