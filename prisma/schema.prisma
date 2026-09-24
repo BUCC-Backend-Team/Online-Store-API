@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
+}
+
+enum UserRole {
+  customer
+  admin
+
+  @@map("user_role")
+}
+
+enum OrderStatus {
+  pending
+  paid
+  shipped
+  cancelled
+
+  @@map("order_status")
+}
+
+
+model User {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @map("user_id") @db.Uuid
+  name      String?  @db.VarChar(255)
+  email     String   @unique @db.VarChar(255)
+  password  String   @map("password_hash") @db.VarChar(255)
+  role      UserRole @default(customer)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  orders Order[]
+
+  @@index([id], map: "idx_users_user_id")
+  @@map("users")
+}
+
+model Product {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @map("product_id") @db.Uuid
+  sku           String   @unique @db.VarChar(100)
+  name          String   @db.VarChar(255)
+  description   String?  @db.Text
+  price         Decimal  @db.Decimal(10, 2)
+  stockQuantity Int      @default(0) @map("stock_quantity")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  orderItems OrderItem[]
+
+  @@index([sku], map: "idx_products_sku")
+  @@map("products")
+}
+
+model Order {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @map("order_id") @db.Uuid
+  userId      String      @map("user_id") @db.Uuid
+  status      OrderStatus @default(pending)
+  totalAmount Decimal     @map("total_amount") @db.Decimal(10, 2)
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  user       User        @relation(fields: [userId], references: [id])
+  orderItems OrderItem[]
+
+  @@index([userId], map: "idx_orders_user_id")
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @map("order_item_id") @db.Uuid
+  orderId   String  @map("order_id") @db.Uuid
+  productId String  @map("product_id") @db.Uuid
+  quantity  Int
+  unitPrice Decimal @map("unit_price") @db.Decimal(10, 2)
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}

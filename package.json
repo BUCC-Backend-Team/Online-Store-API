@@ -2,15 +2,28 @@
   "name": "online-store-api",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/server.js",
   "scripts": {
+    "start": "node src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "express": "^5.2.1"
+    "@prisma/client": "^5.22.0",
+    "@upstash/redis": "^1.39.0",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.3",
+    "express": "^5.2.1",
+    "joi": "^18.2.9",
+    "jsonwebtoken": "^9.0.3"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
   }
 }
