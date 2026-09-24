@@ -1,16 +1,6 @@
 const prisma = require('../../config/prisma');
 const ApiError = require('../../utils/apiError');
 
-// Assumed Prisma client, mapped from the SQL schema and not created here:
-//   user.id                         -> users.user_id
-//   product.id, stockQuantity,      -> products.product_id, stock_quantity,
-//     isActive, price, sku, name       is_active, price, sku, name
-//   order.id, userId, status,       -> orders.order_id, user_id, status,
-//     totalAmount, items               total_amount, order_items
-//   orderItem.productId, quantity,  -> order_items.product_id, quantity,
-//     unitPrice                        unit_price
-// Stock locks use the SQL table and column names directly.
-
 const MAX_ATTEMPTS = 3;
 
 const toCents = (value) => {
@@ -162,6 +152,20 @@ const createOrderTransaction = async (userId, items) => {
   });
 };
 
+const getMyOrders = async ({ userId, role }) => {
+  if (role !== 'customer') {
+    throw new ApiError(403, 'Only customers can view their orders');
+  }
+
+  const orders = await prisma.order.findMany({
+    where: { userId },
+    include: { items: true },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return orders.map(serializeOrder);
+};
+
 const placeOrder = async ({ userId, role, items }) => {
   if (role !== 'customer') {
     throw new ApiError(403, 'Only customers can place orders');
@@ -186,4 +190,4 @@ const placeOrder = async ({ userId, role, items }) => {
   }
 };
 
-module.exports = { placeOrder };
+module.exports = { placeOrder, getMyOrders };

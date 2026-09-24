@@ -1,7 +1,5 @@
 const Joi = require('joi');
 
-// Client sends product ids and quantities. Price is taken from the product row
-// at placement time so a customer cannot set their own unit price.
 const placeOrder = Joi.object({
   items: Joi.array()
     .items(
