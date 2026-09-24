@@ -18,16 +18,19 @@ const placeOrder = async (req, res, next) => {
   }
 };
 
-const getMyOrders = async (req, res, next) => {
+const getOrders = async (req, res, next) => {
   try {
-    const orders = await orderService.getMyOrders({
-      userId: req.user.id,
-      role: req.user.role,
-    });
+    const orders =
+      req.user.role === 'admin'
+        ? await orderService.getAllOrders({ role: req.user.role })
+        : await orderService.getMyOrders({
+            userId: req.user.id,
+            role: req.user.role,
+          });
 
     res.status(200).json({
       success: true,
-      message: 'Orders retrieved successfully',
+      message: req.user.role === 'admin' ? 'All orders retrieved successfully' : 'Orders retrieved successfully',
       data: { orders },
     });
   } catch (error) {
@@ -35,4 +38,4 @@ const getMyOrders = async (req, res, next) => {
   }
 };
 
-module.exports = { placeOrder, getMyOrders };
+module.exports = { placeOrder, getOrders };

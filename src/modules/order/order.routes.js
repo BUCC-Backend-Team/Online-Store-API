@@ -7,6 +7,6 @@ const orderValidation = require('../../validations/order.validation');
 const router = express.Router();
 
 router.post('/', protect, validate(orderValidation.placeOrder), orderController.placeOrder);
-router.get('/', protect, orderController.getMyOrders);
+router.get('/', protect, orderController.getOrders);
 
 module.exports = router;
