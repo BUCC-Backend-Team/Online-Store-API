@@ -8,8 +8,8 @@ const ROLES = require('../../constants/roles');
 
 const router = express.Router();
 
-router.post('/signup', validate(userValidation.signup), userController.signup);
-router.post('/login', validate(userValidation.login), userController.login);
+// router.post('/signup', validate(userValidation.signup), userController.signup);
+// router.post('/login', validate(userValidation.login), userController.login);
 
 router.get('/me', protect, userController.getMe);
 router.patch('/me', protect, validate(userValidation.updateProfile), userController.updateMe);

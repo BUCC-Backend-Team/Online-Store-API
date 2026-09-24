@@ -5,16 +5,17 @@ const { generateToken } = require('./jwt.util');
 
 const SALT_ROUNDS = 10;
 
+
 const signup = async ({ name, email, password }) => {
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
     throw new ApiError(409, 'An account with this email already exists');
   }
 
-  const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
   const user = await prisma.user.create({
-    data: { name, email, password: hashedPassword },
+    data: { name, email, passwordHash },
   });
 
   const token = generateToken(user);
@@ -28,7 +29,11 @@ const login = async ({ email, password }) => {
     throw new ApiError(401, 'Invalid email or password');
   }
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!user.isActive) {
+    throw new ApiError(403, 'This account has been deactivated');
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
   if (!isPasswordValid) {
     throw new ApiError(401, 'Invalid email or password');
   }
@@ -37,6 +42,7 @@ const login = async ({ email, password }) => {
 
   return { user: sanitizeUser(user), token };
 };
+
 
 
 const getById = async (id) => {
@@ -65,26 +71,24 @@ const updateProfile = async (id, updates) => {
   return sanitizeUser(user);
 };
 
-
 const getAllUsers = async () => {
   const users = await prisma.user.findMany({ orderBy: { createdAt: 'desc' } });
   return users.map(sanitizeUser);
 };
 
-
+// Soft delete — deactivates the account instead of removing the row,
+// so past orders tied to this user aren't orphaned.
 const deleteUser = async (id) => {
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) {
     throw new ApiError(404, 'User not found');
   }
-  await prisma.user.delete({ where: { id } });
+  await prisma.user.update({ where: { id }, data: { isActive: false } });
 };
 
-// ─── Helpers ─────────────────────────────────────────────
 
-// Never send the password hash back to the client
 const sanitizeUser = (user) => {
-  const { password, ...safeUser } = user;
+  const { passwordHash, ...safeUser } = user;
   return safeUser;
 };
 
@@ -94,6 +98,5 @@ module.exports = {
   getById,
   updateProfile,
   getAllUsers,
-  updateUserRole,
   deleteUser,
 };
