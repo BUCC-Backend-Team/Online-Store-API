@@ -17,6 +17,7 @@ const errorHandler = (err, req, res, next) => {
   const { statusCode = 500, message } = err;
 
   logger.error(message, {
+    event: 'error',
     requestId: req.id,
     statusCode,
     path: req.originalUrl,
