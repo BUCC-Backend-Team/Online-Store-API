@@ -146,4 +146,30 @@ const updateProduct = async ({ role, sku, updates }) => {
   }
 };
 
-module.exports = { createProduct, getProducts, getProductBySku, updateProduct };
+const deactivateProduct = async ({ role, sku }) => {
+  if (role !== 'admin') {
+    throw new ApiError(403, 'Only admins can deactivate products');
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const locked = await tx.$queryRaw`
+      SELECT product_id
+      FROM products
+      WHERE sku = ${sku.trim()}
+      FOR UPDATE
+    `;
+
+    if (locked.length === 0) {
+      throw new ApiError(404, 'Product not found');
+    }
+
+    const product = await tx.product.update({
+      where: { id: String(locked[0].product_id) },
+      data: { isActive: false },
+    });
+
+    return serializeProduct(product);
+  });
+};
+
+module.exports = { createProduct, getProducts, getProductBySku, updateProduct, deactivateProduct };

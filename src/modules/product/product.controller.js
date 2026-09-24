@@ -75,4 +75,21 @@ const updateProduct = async (req, res, next) => {
   }
 };
 
-module.exports = { createProduct, getProducts, getProduct, updateProduct };
+const deactivateProduct = async (req, res, next) => {
+  try {
+    const product = await productService.deactivateProduct({
+      role: req.user.role,
+      sku: req.params.sku,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Product deactivated successfully',
+      data: { product },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { createProduct, getProducts, getProduct, updateProduct, deactivateProduct };

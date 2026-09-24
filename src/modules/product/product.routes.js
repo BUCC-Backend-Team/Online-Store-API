@@ -16,5 +16,11 @@ router.patch(
   validate(productValidation.updateProduct),
   productController.updateProduct
 );
+router.post(
+  '/:sku/deactivate',
+  protect,
+  validate(productValidation.getProduct, 'params'),
+  productController.deactivateProduct
+);
 
 module.exports = router;
