@@ -8,6 +8,16 @@ All routes are under `/api`. Example: `https://online-store-api-9wfq.onrender.co
 
 The service is hosted on Render. The first request after a period of inactivity can take longer while the instance wakes up.
 
+## Test accounts
+
+Signup creates a customer. Use this shared admin to manage products and orders on the live API:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| admin | `admin@example.com` | `Adminpass1` |
+
+Log in with `POST /api/auth/login`. Create your own customer account with `POST /api/auth/signup` when you need to place an order.
+
 ## What it does
 
 - Account signup and login with a JSON Web Token that lasts 7 days.
@@ -287,7 +297,7 @@ Copy the rate-limit variables if you want the same limits as local development. 
 
 ## Walkthrough
 
-1. Log in as the seeded admin: `POST /api/auth/login`.
+1. Log in as the admin in [Test accounts](#test-accounts): `POST /api/auth/login`.
 2. Create a product: `POST /api/products`. Save `data.product.id`.
 3. Sign up a customer: `POST /api/auth/signup`.
 4. Place an order as that customer: `POST /api/orders` with the product id.
