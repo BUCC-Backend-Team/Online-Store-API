@@ -8,5 +8,13 @@ const router = express.Router();
 
 router.post('/', protect, validate(productValidation.createProduct), productController.createProduct);
 router.get('/', protect, validate(productValidation.listProducts, 'query'), productController.getProducts);
+router.get('/:sku', protect, validate(productValidation.getProduct, 'params'), productController.getProduct);
+router.patch(
+  '/:sku',
+  protect,
+  validate(productValidation.getProduct, 'params'),
+  validate(productValidation.updateProduct),
+  productController.updateProduct
+);
 
 module.exports = router;
