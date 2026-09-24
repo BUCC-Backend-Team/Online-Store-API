@@ -69,14 +69,16 @@ const getProducts = async ({ role, page = 1, limit = 20 }) => {
   }
 
   const skip = (page - 1) * limit;
+  const where = role === 'customer' ? { isActive: true } : {};
 
   const [products, total] = await Promise.all([
     prisma.product.findMany({
+      where,
       skip,
       take: limit,
       orderBy: { createdAt: 'desc' },
     }),
-    prisma.product.count(),
+    prisma.product.count({ where }),
   ]);
 
   return {
@@ -96,7 +98,7 @@ const getProductBySku = async ({ role, sku }) => {
     where: { sku: sku.trim() },
   });
 
-  if (!product) {
+  if (!product || (role === 'customer' && product.isActive === false)) {
     throw new ApiError(404, 'Product not found');
   }
 

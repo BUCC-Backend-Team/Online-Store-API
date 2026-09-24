@@ -15,7 +15,7 @@ const signup = async ({ name, email, password }) => {
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
   const user = await prisma.user.create({
-    data: { name, email, passwordHash },
+    data: { name, email, password: passwordHash },
   });
 
   const token = generateToken(user);
@@ -33,7 +33,7 @@ const login = async ({ email, password }) => {
     throw new ApiError(403, 'This account has been deactivated');
   }
 
-  const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+  const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
     throw new ApiError(401, 'Invalid email or password');
   }
@@ -88,7 +88,7 @@ const deleteUser = async (id) => {
 
 
 const sanitizeUser = (user) => {
-  const { passwordHash, ...safeUser } = user;
+  const { password: _password, ...safeUser } = user;
   return safeUser;
 };
 

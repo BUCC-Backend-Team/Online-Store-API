@@ -26,7 +26,7 @@ const serializeOrder = (order) => ({
   totalAmount: formatCents(toCents(order.totalAmount)),
   createdAt: order.createdAt,
   updatedAt: order.updatedAt,
-  items: order.items.map((item) => ({
+  items: order.orderItems.map((item) => ({
     id: item.id,
     orderId: item.orderId,
     productId: item.productId,
@@ -137,7 +137,7 @@ const createOrderTransaction = async (userId, items) => {
         userId,
         status: 'pending',
         totalAmount: formatCents(totalCents),
-        items: {
+        orderItems: {
           create: lines.map((line) => ({
             productId: line.productId,
             quantity: line.quantity,
@@ -145,7 +145,7 @@ const createOrderTransaction = async (userId, items) => {
           })),
         },
       },
-      include: { items: true },
+      include: { orderItems: true },
     });
 
     return serializeOrder(order);
@@ -159,7 +159,7 @@ const getMyOrders = async ({ userId, role }) => {
 
   const orders = await prisma.order.findMany({
     where: { userId },
-    include: { items: true },
+    include: { orderItems: true },
     orderBy: { createdAt: 'desc' },
   });
 
@@ -173,7 +173,7 @@ const getOrder = async ({ orderId, userId, role }) => {
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { items: true },
+    include: { orderItems: true },
   });
 
   if (!order) {
@@ -217,14 +217,14 @@ const cancelOrderTransaction = async ({ orderId, userId, role }) => {
 
     const order = await tx.order.findUnique({
       where: { id: orderId },
-      include: { items: true },
+      include: { orderItems: true },
     });
 
     if (!order) {
       throw new ApiError(404, 'Order not found');
     }
 
-    const sortedItems = [...order.items].sort((a, b) => a.productId.localeCompare(b.productId));
+    const sortedItems = [...order.orderItems].sort((a, b) => a.productId.localeCompare(b.productId));
     const lockedProducts = await lockProducts(tx, sortedItems);
 
     for (const item of sortedItems) {
@@ -245,7 +245,7 @@ const cancelOrderTransaction = async ({ orderId, userId, role }) => {
     const cancelled = await tx.order.update({
       where: { id: orderId },
       data: { status: 'cancelled' },
-      include: { items: true },
+      include: { orderItems: true },
     });
 
     return serializeOrder(cancelled);
@@ -290,7 +290,7 @@ const updateOrderStatus = async ({ orderId, status, role }) => {
   if (updated.count === 1) {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { items: true },
+      include: { orderItems: true },
     });
     if (!order) {
       throw new ApiError(404, 'Order not found');
@@ -312,7 +312,7 @@ const getAllOrders = async ({ role }) => {
   }
 
   const orders = await prisma.order.findMany({
-    include: { items: true },
+    include: { orderItems: true },
     orderBy: { createdAt: 'desc' },
   });
 
