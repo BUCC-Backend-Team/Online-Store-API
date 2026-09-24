@@ -1,4 +1,4 @@
-const { verifyToken } = require('../modules/auth/jwt.util');
+const { verifyToken } = require('../modules/users/jwt.util');
 const ApiError = require('../utils/apiError');
 const prisma = require('../config/prisma');
 const catchAsync = require('../utils/catchAsync');
@@ -12,7 +12,7 @@ const protect = catchAsync(async (req, res, next) => {
   }
 
   const token = authHeader.split(' ')[1];
-  const payload = verifyToken(token); 
+  const payload = verifyToken(token); // throws ApiError(401) if invalid/expired
 
   const user = await prisma.user.findUnique({ where: { id: payload.sub } });
   if (!user) {
