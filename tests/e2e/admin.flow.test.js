@@ -193,8 +193,8 @@ describe('Admin flow: order management', () => {
         price: '10.00',
         stockQuantity: 50,
       });
-    activeProductSku = prodRes.body.data.sku;
-    const activeProductId = prodRes.body.data.id;
+    activeProductSku = prodRes.body.data.product.sku;
+    const activeProductId = prodRes.body.data.product.id;
 
     // Create fresh customer
     const custRes = await request(app).post('/api/auth/signup').send({
@@ -209,7 +209,7 @@ describe('Admin flow: order management', () => {
       .post('/api/orders')
       .set('Authorization', `Bearer ${customerToken}`)
       .send({ items: [{ productId: activeProductId, quantity: 2 }] });
-    orderId = orderRes.body.data.id;
+    orderId = orderRes.body.data.order.id;
   });
 
   it('views all orders across all users', async () => {

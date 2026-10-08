@@ -26,6 +26,22 @@ async function main() {
       role: 'admin',
     },
   });
+
+  // Sample catalog so a fresh database has something to browse and order.
+  // Upsert by SKU keeps the seed safe to run more than once.
+  const sampleProducts = [
+    { sku: 'SAMPLE-TSHIRT', name: 'Cotton T-Shirt', description: 'Plain white tee', price: '15.00', stockQuantity: 100 },
+    { sku: 'SAMPLE-MUG', name: 'Coffee Mug', description: '350ml ceramic mug', price: '8.50', stockQuantity: 50 },
+    { sku: 'SAMPLE-CAP', name: 'Baseball Cap', description: 'Adjustable cap', price: '12.00', stockQuantity: 30 },
+  ];
+
+  for (const product of sampleProducts) {
+    await prisma.product.upsert({
+      where: { sku: product.sku },
+      update: {},
+      create: product,
+    });
+  }
 }
 
 main()
