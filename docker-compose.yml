@@ -1,0 +1,71 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppassword
+      POSTGRES_DB: online_store
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d online_store"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  srh:
+    image: hiett/serverless-redis-http:latest
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: test-token
+      SRH_CONNECTION_STRING: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  migrate:
+    build:
+      context: .
+      target: deps
+    command: npx prisma migrate deploy
+    environment:
+      DATABASE_URL: postgresql://appuser:apppassword@postgres:5432/online_store
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: Admin@Password1
+      ADMIN_NAME: Store Admin
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      target: runner
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://appuser:apppassword@postgres:5432/online_store
+      JWT_SECRET: a-very-long-secret-for-testing-only-do-not-use-in-prod
+      UPSTASH_REDIS_REST_URL: http://srh:80
+      UPSTASH_REDIS_REST_TOKEN: test-token
+      PORT: 3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      srh:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:

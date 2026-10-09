@@ -319,3 +319,25 @@ src/modules/order/            Checkout, cancel, status
 src/middleware/               Auth, roles, validation, rate limits
 src/validations/              Joi schemas
 ```
+
+# Answers
+
+## 1. Why can the API not use localhost:5433 to reach Postgres inside Docker? What does it use instead, and why?
+
+Inside a container, localhost points back at the container itself, and there's no Postgres running in the API container. The 5433 port only exists on my laptop because I published it for testing. Docker puts all the services on one private network where each service can be reached by its name, so the API connects to `postgres:5432` instead.
+
+## 2. Why do you copy package*.json and run npm ci before copying the source code?
+
+Docker caches each step of the build and only redoes a step if something before it changed. My dependencies almost never change, but my code changes constantly. If I copy the package files and install first, editing my code doesn't trigger a reinstall, so rebuilds take seconds instead of minutes.
+
+## 3. What does the multi-stage build give you in this project, and what ends up in the final image?
+
+The first stage does the heavy work: it installs everything and generates the Prisma client. The final stage starts fresh and only takes what the app needs to run: production dependencies, the generated Prisma client, the prisma folder and the src folder. That keeps the image smaller, and it runs as the non-root `node` user, so there's less risk if the app ever gets compromised.
+
+## 4. What is the difference between a plain depends_on and one with condition: service_healthy?
+
+A plain `depends_on` only waits for the other container to start. Postgres can be started but still not ready to accept connections, so the API could crash trying to reach it. With `service_healthy`, Compose waits until the healthcheck passes, so the API and migrate only start once the database is actually ready.
+
+## 5. What happens to the database data after docker compose down, and after docker compose down -v? Why?
+
+After `down`, my data is still there. It removes the containers but not the named volume `pgdata`, which is where Postgres stores its files. After `down -v`, the volume gets deleted too, so the database comes back empty and I have to run migrations and seed again.
